@@ -1,0 +1,58 @@
+name: Update Daily/Item list
+
+on:
+  schedule:
+         - cron: "0 7 * * *"
+  push:
+    branches: [ main ]
+
+jobs:
+  run:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+    - name: Install dependencies & Start program
+      run: |
+        dir
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        python program.py
+        dir
+      env: # Or as an environment variable
+        X_NAVER_CLIENT_ID: ${{ secrets.X_NAVER_CLIENT_ID }}
+        X_NAVER_CLIENT_SECRET: ${{ secrets.X_NAVER_CLIENT_SECRET }}
+
+        keyword0: "TV"
+        keyword1: "리모컨"
+        keyword2: "마우스"
+        keyword3: "소파"
+        keyword4: "스탠드조명"
+        keyword5: "스피커"
+        keyword6: "슬리퍼"
+        keyword7: "테이블"
+        keyword8: "프린터기"
+        keyword9: "모니터"
+
+    - name: Commit files
+      id: commit
+      run: |
+        git config --local user.email "e-mail"
+        git config --local user.name "username"
+        git add --all
+        if [-z "$(git status --porcelain)"]; then
+           echo "::set-output name=push::false"
+        else
+           git commit -m "Daily Update 키워드 10개" -a
+           echo "::set-output name=push::true"
+        fi
+      shell: bash
+    - name: Push changes
+      if: steps.commit.outputs.push == 'true'
+      uses: ad-m/github-push-action@master
+      with:
+         github_token: ${{ secrets.GITHUB_TOKEN }}
